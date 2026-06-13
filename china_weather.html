@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>中国天气预报导航 — 点击省份查看天气</title>
+    <!-- ECharts -->
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
+    <style>
+        /* ===== Reset & Base ===== */
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+            background: linear-gradient(135deg, #e8f0fe 0%, #d4e4f7 100%);
+            min-height: 100vh;
+            color: #1a2332;
+        }
+
+        /* ===== Header ===== */
+        .header {
+            background: linear-gradient(90deg, #1a73e8, #1557b0);
+            color: #fff;
+            padding: 20px 32px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 2px 12px rgba(0,0,0,.15);
+        }
+        .header h1 {
+            font-size: 24px;
+            font-weight: 600;
+            letter-spacing: 1px;
+        }
+        .header h1 small {
+            font-size: 14px;
+            font-weight: 400;
+            opacity: .75;
+            margin-left: 12px;
+        }
+        .header .nav a {
+            color: rgba(255,255,255,.85);
+            text-decoration: none;
+            font-size: 14px;
+            margin-left: 20px;
+            transition: color .2s;
+        }
+        .header .nav a:hover { color: #fff; }
+
+        /* ===== Layout ===== */
+        .main-container {
+            display: flex;
+            gap: 0;
+            max-width: 1440px;
+            margin: 0 auto;
+            padding: 20px;
+            min-height: calc(100vh - 72px);
+        }
+
+        /* ===== Map Panel ===== */
+        .map-panel {
+            flex: 1;
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 2px 20px rgba(0,0,0,.08);
+            padding: 16px;
+            min-height: 600px;
+            position: relative;
+        }
+        #china-map {
+            width: 100%;
+            height: 100%;
+            min-height: 600px;
+        }
+        .map-tip {
+            position: absolute;
+            bottom: 16px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 13px;
+            color: #888;
+            background: rgba(255,255,255,.9);
+            padding: 4px 16px;
+            border-radius: 20px;
+            white-space: nowrap;
+        }
+
+        /* ===== Sidebar ===== */
+        .sidebar {
+            width: 360px;
+            margin-left: 20px;
+            flex-shrink: 0;
+        }
+        .sidebar .search-box {
+            position: relative;
+            margin-bottom: 16px;
+        }
+        .sidebar .search-box input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e0e7ef;
+            border-radius: 10px;
+            font-size: 15px;
+            outline: none;
+            transition: border-color .2s;
+            background: #fff;
+        }
+        .sidebar .search-box input:focus {
+            border-color: #1a73e8;
+        }
+        .sidebar .search-box input::placeholder {
+            color: #aaa;
+        }
+
+        /* ===== Region Accordion ===== */
+        .region-list {
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 2px 20px rgba(0,0,0,.08);
+            max-height: calc(100vh - 160px);
+            overflow-y: auto;
+        }
+        .region-list::-webkit-scrollbar { width: 6px; }
+        .region-list::-webkit-scrollbar-thumb { background: #ccc; border-radius: 3px; }
+
+        .region-group {
+            border-bottom: 1px solid #f0f2f5;
+        }
+        .region-group:last-child { border-bottom: none; }
+
+        .region-header {
+            padding: 14px 20px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            user-select: none;
+            transition: background .2s;
+            color: #1a2332;
+        }
+        .region-header:hover { background: #f5f8fc; }
+        .region-header .arrow {
+            transition: transform .25s;
+            font-size: 12px;
+            color: #999;
+        }
+        .region-header.open .arrow { transform: rotate(180deg); }
+
+        .region-body {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height .3s ease;
+        }
+        .region-body.open { max-height: 800px; }
+
+        .province-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 20px 10px 28px;
+            cursor: pointer;
+            transition: background .15s;
+            border-top: 1px solid #f5f7fa;
+        }
+        .province-item:hover { background: #eaf3fe; }
+        .province-item .name {
+            font-size: 15px;
+            font-weight: 500;
+        }
+        .province-item .city {
+            font-size: 13px;
+            color: #888;
+        }
+        .province-item .link-icon {
+            color: #1a73e8;
+            font-size: 14px;
+            opacity: 0;
+            transition: opacity .2s;
+        }
+        .province-item:hover .link-icon { opacity: 1; }
+
+        /* ===== Highlight Bar ===== */
+        .highlight-bar {
+            padding: 12px 20px;
+            margin: 12px 16px;
+            background: linear-gradient(135deg, #e8f0fe, #dce8fa);
+            border-radius: 8px;
+            text-align: center;
+            font-size: 13px;
+            color: #1a73e8;
+        }
+        .highlight-bar span { font-weight: 600; }
+
+        /* ===== Responsive ===== */
+        @media (max-width: 960px) {
+            .main-container {
+                flex-direction: column;
+                padding: 12px;
+            }
+            .sidebar {
+                width: 100%;
+                margin-left: 0;
+                margin-top: 16px;
+            }
+            .map-panel { min-height: 400px; }
+            #china-map { min-height: 400px; }
+            .region-list { max-height: none; }
+        }
+
+        /* ===== Loading ===== */
+        .loading {
+            text-align: center;
+            padding: 60px 20px;
+            color: #999;
+        }
+        .loading .spinner {
+            display: inline-block;
+            width: 32px;
+            height: 32px;
+            border: 3px solid #e0e7ef;
+            border-top-color: #1a73e8;
+            border-radius: 50%;
+            animation: spin .7s linear infinite;
+            margin-bottom: 12px;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* ===== Province active state (map) ===== */
+        .active-province-info {
+            display: none;
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(255,255,255,.95);
+            padding: 12px 18px;
+            border-radius: 8px;
+            box-shadow: 0 2px 12px rgba(0,0,0,.12);
+            text-align: center;
+            z-index: 10;
+        }
+        .active-province-info .p-name {
+            font-size: 18px;
+            font-weight: 600;
+            color: #1a73e8;
+        }
+        .active-province-info .p-action {
+            font-size: 13px;
+            color: #666;
+            margin-top: 4px;
+        }
+
+        /* ===== (reserved for future use) ===== */
+    </style>
+</head>
+<body>
+
+<!-- ===== Header ===== -->
+<header class="header">
+    <h1>
+        🌤 中国天气预报导航
+        <small>点击省份查看天气</small>
+    </h1>
+    <div class="nav">
+        <a href="https://tianqi.moji.com" target="_blank" rel="noopener">墨迹天气</a>
+        <a href="https://www.weather.com.cn" target="_blank" rel="noopener">中国天气网</a>
+    </div>
+</header>
+
+<!-- ===== Main ===== -->
+<div class="main-container">
+    <!-- Map Panel -->
+    <div class="map-panel">
+        <div id="china-map">
+            <div class="loading">
+                <div class="spinner"></div>
+                <div>加载中国地图中...</div>
+            </div>
+        </div>
+        <div class="active-province-info" id="activeProvinceInfo">
+            <div class="p-name" id="activeProvinceName"></div>
+            <div class="p-action">👆 点击查看天气</div>
+        </div>
+        <div class="map-tip">🖱 悬停高亮 · 点击跳转天气预报</div>
+    </div>
+
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="search-box">
+            <input type="text" id="searchInput" placeholder="🔍 搜索省份或城市..." oninput="filterProvinces()">
+        </div>
+        <div class="region-list" id="regionList">
+            <!-- 由 JavaScript 动态渲染 -->
+        </div>
+    </div>
+</div>
+
+<script>
+// ================================================================
+//  1.  省份 · 城市 · 数据
+// ================================================================
+// 数据来自 weather_data.csv — 每个省份一个代表城市
+// 墨迹天气 URL 模式: https://tianqi.moji.com/weather/china/<province>/<city>
+
+const PROVINCE_DATA = [
+    // ===== 华北 =====
+    { region: '华北', name: '北京',       city: '北京',     pinyin: 'beijing',     cityPinyin: 'beijing',         temp: 29.1 },
+    { region: '华北', name: '天津',       city: '天津',     pinyin: 'tianjin',     cityPinyin: 'tianjin',         temp: 30.1 },
+    { region: '华北', name: '河北',       city: '石家庄',   pinyin: 'hebei',       cityPinyin: 'shijiazhuang',    temp: 33.3 },
+    { region: '华北', name: '山西',       city: '太原',     pinyin: 'shanxi',      cityPinyin: 'taiyuan',         temp: 31.3 },
+    { region: '华北', name: '内蒙古',     city: '呼和浩特', pinyin: 'neimenggu',   cityPinyin: 'huhehaote',       temp: 29.7 },
+
+    // ===== 东北 =====
+    { region: '东北', name: '辽宁',       city: '沈阳',     pinyin: 'liaoning',    cityPinyin: 'shenyang',        temp: 26.1 },
+    { region: '东北', name: '吉林',       city: '长春',     pinyin: 'jilin',       cityPinyin: 'changchun',       temp: 25.3 },
+    { region: '东北', name: '黑龙江',     city: '哈尔滨',   pinyin: 'heilongjiang',cityPinyin: 'haerbin',         temp: 24.1 },
+
+    // ===== 华东 =====
+    { region: '华东', name: '上海',       city: '上海',     pinyin: 'shanghai',    cityPinyin: 'shanghai',        temp: 29.7 },
+    { region: '华东', name: '江苏',       city: '南京',     pinyin: 'jiangsu',     cityPinyin: 'nanjing',         temp: 32.4 },
+    { region: '华东', name: '浙江',       city: '杭州',     pinyin: 'zhejiang',    cityPinyin: 'hangzhou',        temp: 30.0 },
+    { region: '华东', name: '安徽',       city: '合肥',     pinyin: 'anhui',       cityPinyin: 'hefei',           temp: 31.4 },
+    { region: '华东', name: '福建',       city: '福州',     pinyin: 'fujian',      cityPinyin: 'fuzhou',          temp: 27.9 },
+    { region: '华东', name: '江西',       city: '南昌',     pinyin: 'jiangxi',     cityPinyin: 'nanchang',        temp: 29.1 },
+    { region: '华东', name: '山东',       city: '济南',     pinyin: 'shandong',    cityPinyin: 'jinan',           temp: 33.4 },
+
+    // ===== 华中 =====
+    { region: '华中', name: '河南',       city: '郑州',     pinyin: 'henan',       cityPinyin: 'zhengzhou',       temp: 35.3 },
+    { region: '华中', name: '湖北',       city: '武汉',     pinyin: 'hubei',       cityPinyin: 'wuhan',           temp: 31.1 },
+    { region: '华中', name: '湖南',       city: '长沙',     pinyin: 'hunan',       cityPinyin: 'changsha',        temp: 32.0 },
+
+    // ===== 华南 =====
+    { region: '华南', name: '广东',       city: '广州',     pinyin: 'guangdong',   cityPinyin: 'guangzhou',       temp: 29.1 },
+    { region: '华南', name: '广西',       city: '南宁',     pinyin: 'guangxi',     cityPinyin: 'nanning',         temp: 30.6 },
+    { region: '华南', name: '海南',       city: '海口',     pinyin: 'hainan',      cityPinyin: 'haikou',          temp: 34.1 },
+    { region: '华南', name: '香港',       city: '香港',     pinyin: 'xianggang',   cityPinyin: 'hongkong',        temp: 28.3 },
+    { region: '华南', name: '澳门',       city: '澳门',     pinyin: 'aomen',       cityPinyin: 'macau',           temp: 29.1 },
+
+    // ===== 西南 =====
+    { region: '西南', name: '重庆',       city: '重庆',     pinyin: 'chongqing',   cityPinyin: 'chongqing',       temp: 30.4 },
+    { region: '西南', name: '四川',       city: '成都',     pinyin: 'sichuan',     cityPinyin: 'chengdu',         temp: 29.7 },
+    { region: '西南', name: '贵州',       city: '贵阳',     pinyin: 'guizhou',     cityPinyin: 'guiyang',         temp: 27.3 },
+    { region: '西南', name: '云南',       city: '昆明',     pinyin: 'yunnan',      cityPinyin: 'kunming',         temp: 22.7 },
+    { region: '西南', name: '西藏',       city: '拉萨',     pinyin: 'xizang',      cityPinyin: 'lasa',            temp: 25.7 },
+
+    // ===== 西北 =====
+    { region: '西北', name: '陕西',       city: '西安',     pinyin: 'shaanxi',     cityPinyin: 'xian',            temp: 36.9 },
+    { region: '西北', name: '甘肃',       city: '兰州',     pinyin: 'gansu',       cityPinyin: 'lanzhou',         temp: 30.9 },
+    { region: '西北', name: '青海',       city: '西宁',     pinyin: 'qinghai',     cityPinyin: 'xining',          temp: 24.1 },
+    { region: '西北', name: '宁夏',       city: '银川',     pinyin: 'ningxia',     cityPinyin: 'yinchuan',        temp: 33.1 },
+    { region: '西北', name: '新疆',       city: '乌鲁木齐', pinyin: 'xinjiang',    cityPinyin: 'wulumuqi',        temp: 31.6 },
+
+    // ===== 台湾 =====
+    { region: '台湾', name: '台湾',       city: '台北',     pinyin: 'taiwan',      cityPinyin: 'taibei',          temp: 25.1 },
+];
+
+// 地区排序
+const REGION_ORDER = ['华北', '东北', '华东', '华中', '华南', '西南', '西北', '台湾'];
+const REGION_ICONS = { '华北': '🏛', '东北': '🌲', '华东': '🌊', '华中': '⛰', '华南': '🌴', '西南': '🏔', '西北': '🏜', '台湾': '🗺' };
+
+// 构建省份名→数据映射
+const nameMap = {};
+PROVINCE_DATA.forEach(p => { nameMap[p.name] = p; });
+
+// ECharts GeoJSON 全名 → 短名映射（DataV 使用全称）
+const GEO_NAME_MAP = {
+    '北京市': '北京', '天津市': '天津', '河北省': '河北', '山西省': '山西',
+    '内蒙古自治区': '内蒙古',
+    '辽宁省': '辽宁', '吉林省': '吉林', '黑龙江省': '黑龙江',
+    '上海市': '上海', '江苏省': '江苏', '浙江省': '浙江', '安徽省': '安徽',
+    '福建省': '福建', '江西省': '江西', '山东省': '山东',
+    '河南省': '河南', '湖北省': '湖北', '湖南省': '湖南',
+    '广东省': '广东', '广西壮族自治区': '广西', '海南省': '海南',
+    '重庆市': '重庆', '四川省': '四川', '贵州省': '贵州', '云南省': '云南',
+    '西藏自治区': '西藏',
+    '陕西省': '陕西', '甘肃省': '甘肃', '青海省': '青海',
+    '宁夏回族自治区': '宁夏', '新疆维吾尔自治区': '新疆',
+    '台湾省': '台湾',
+    '香港特别行政区': '香港', '澳门特别行政区': '澳门',
+};
+const SHORT_TO_GEO = {};
+Object.entries(GEO_NAME_MAP).forEach(([f, s]) => { SHORT_TO_GEO[s] = f; });
+
+// ================================================================
+//  2.  渲染侧边栏列表
+// ================================================================
+function renderSidebar(filterText = '') {
+    const container = document.getElementById('regionList');
+    const hasFilter = filterText.length > 0;
+    let html = '';
+
+    if (!hasFilter) {
+        // 正常按地区分组
+        REGION_ORDER.forEach(region => {
+            const items = PROVINCE_DATA.filter(p => p.region === region);
+            const icon = REGION_ICONS[region] || '';
+            html += `
+                <div class="region-group">
+                    <div class="region-header open" onclick="toggleRegion(this)">
+                        <span>${icon} ${region} <small style="font-weight:400;color:#999;font-size:13px;">（${items.length} 省/市）</small></span>
+                        <span class="arrow">▾</span>
+                    </div>
+                    <div class="region-body open">
+                        ${items.map(p => renderProvinceItem(p)).join('')}
+                    </div>
+                </div>
+            `;
+        });
+    } else {
+        // 搜索模式：展开所有匹配项，不分区域
+        const filtered = PROVINCE_DATA.filter(p =>
+            p.name.includes(filterText) || p.city.includes(filterText)
+        );
+        if (filtered.length === 0) {
+            html = `<div style="padding:40px 20px;text-align:center;color:#999;">未找到匹配的省份或城市</div>`;
+        } else {
+            html = `
+                <div class="region-group">
+                    <div class="region-header" style="cursor:default;">🔍 搜索结果（${filtered.length} 个）</div>
+                    <div class="region-body open" style="max-height:2000px;">
+                        ${filtered.map(p => renderProvinceItem(p)).join('')}
+                    </div>
+                </div>
+            `;
+        }
+    }
+
+    container.innerHTML = html;
+}
+
+function renderProvinceItem(p) {
+    const url = getWeatherUrl(p);
+    return `
+        <div class="province-item" onclick="navigateTo('${p.pinyin}', '${p.name}')" title="查看 ${p.name} 天气">
+            <div>
+                <div class="name">${p.name}</div>
+                <div class="city">${p.city} · ${p.temp}°C</div>
+            </div>
+            <span class="link-icon">↗</span>
+        </div>
+    `;
+}
+
+function toggleRegion(header) {
+    header.classList.toggle('open');
+    const body = header.nextElementSibling;
+    body.classList.toggle('open');
+}
+
+function filterProvinces() {
+    const val = document.getElementById('searchInput').value.trim();
+    renderSidebar(val);
+}
+
+// ================================================================
+//  3.  墨迹天气 URL 生成
+// ================================================================
+function getWeatherUrl(p) {
+    // 统一格式：所有省份/城市都使用相同的 URL 模式直接跳转
+    return `https://tianqi.moji.com/weather/china/${p.pinyin}/${p.cityPinyin}`;
+}
+
+function navigateTo(pinyin, name) {
+    const p = nameMap[name];
+    if (!p) return;
+    const url = getWeatherUrl(p);
+    window.open(url, '_blank');
+}
+
+// ================================================================
+//  4.  ECharts 中国地图
+// ================================================================
+let myChart = null;
+
+function initMap() {
+    const dom = document.getElementById('china-map');
+    dom.innerHTML = ''; // 清除 loading
+
+    myChart = echarts.init(dom);
+
+    // 加载中国地图数据
+    fetch('https://geo.datav.aliyun.com/areas_v3/bound/100000_full.json')
+        .then(res => res.json())
+        .then(chinaJson => {
+            echarts.registerMap('china', chinaJson);
+            renderMap();
+        })
+        .catch(() => {
+            // 地图数据加载失败 — 仅显示侧边列表
+            dom.innerHTML = `<div class="loading" style="padding:80px 20px;">
+                <p style="color:#e74c3c;font-size:16px;">⚠ 地图加载失败</p>
+                <p style="color:#999;margin-top:8px;font-size:14px;">您仍可使用右侧列表查看省份天气</p>
+            </div>`;
+        });
+}
+
+function getShortName(geoName) {
+    return GEO_NAME_MAP[geoName] || geoName;
+}
+
+function renderMap() {
+    const option = {
+        tooltip: {
+            trigger: 'item',
+            formatter: function(params) {
+                const shortName = getShortName(params.name);
+                const p = nameMap[shortName];
+                if (!p) return `<b>${shortName}</b>`;
+                return `<b>${p.name}</b><br/>🏙 省会: ${p.city}<br/>🌡 日均最高温: ${p.temp}°C<br/>👆 点击查看天气`;
+            },
+            backgroundColor: 'rgba(255,255,255,.95)',
+            borderColor: '#1a73e8',
+            borderWidth: 1,
+            textStyle: { color: '#1a2332', fontSize: 13 },
+            extraCssText: 'border-radius:8px;box-shadow:0 2px 12px rgba(0,0,0,.12);'
+        },
+        visualMap: {
+            min: 20,
+            max: 38,
+            text: ['高温 (°C)', '低温 (°C)'],
+            textStyle: { color: '#666', fontSize: 12 },
+            left: 10,
+            bottom: 10,
+            calculable: true,
+            backgroundColor: 'rgba(255,255,255,.85)',
+            borderColor: '#ddd',
+            borderWidth: 0,
+            padding: [8, 12],
+            inRange: {
+                color: ['#2b7be4', '#5a9be8', '#8dbaf0', '#f7d44a', '#f4a840', '#e8743c', '#d93b21']
+            },
+        },
+        series: [{
+            type: 'map',
+            map: 'china',
+            roam: false,
+            selectedMode: false,
+            nameMap: GEO_NAME_MAP,  // GeoJSON 全名 → 短名
+            label: {
+                show: true,
+                fontSize: 10,
+                color: '#333',
+                formatter: function(params) {
+                    return getShortName(params.name);
+                }
+            },
+            emphasis: {
+                label: {
+                    show: true,
+                    fontSize: 13,
+                    fontWeight: 'bold',
+                    color: '#fff',
+                    formatter: function(params) {
+                        return getShortName(params.name);
+                    }
+                },
+                itemStyle: {
+                    areaColor: '#1a73e8',
+                    shadowBlur: 10,
+                    shadowColor: 'rgba(26,115,232,.3)'
+                }
+            },
+            itemStyle: {
+                borderColor: '#fff',
+                borderWidth: 1.5,
+                areaColor: '#e8f0fe'
+            },
+            data: PROVINCE_DATA.map(p => ({
+                name: p.name,
+                value: Math.round(p.temp * 10) / 10
+            })),
+            // 点击事件通过 onclick 处理
+        }]
+    };
+
+    myChart.setOption(option);
+
+    // 点击省份
+    myChart.on('click', function(params) {
+        const shortName = getShortName(params.name);
+        const p = nameMap[shortName];
+        if (p) {
+            navigateTo(p.pinyin, p.name);
+        }
+    });
+
+    // 响应窗口缩放
+    window.addEventListener('resize', () => { myChart.resize(); });
+}
+
+// ================================================================
+//  5.  启动
+// ================================================================
+document.addEventListener('DOMContentLoaded', function() {
+    renderSidebar();
+    initMap();
+});
+</script>
+
+</body>
+</html>
