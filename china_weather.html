@@ -537,27 +537,51 @@ function hideSkeletons(target) {
     }
 }
 
-function initMap() {
-    const dom = document.getElementById('china-map');
-    dom.innerHTML = ''; // 清除 loading
+// GeoJSON 备选源（DataV 可能有 CORS 问题）
+const GEOJSON_SOURCES = [
+    'https://geo.datav.aliyun.com/areas_v3/bound/100000_full.json',
+    'https://gis-data.s3.amazonaws.com/chinamap.json',
+];
 
-    myChart = echarts.init(dom);
-
-    // 加载中国地图数据
-    fetch('https://geo.datav.aliyun.com/areas_v3/bound/100000_full.json')
-        .then(res => res.json())
+function tryLoadMap(index) {
+    if (index >= GEOJSON_SOURCES.length) {
+        // 所有源都失败
+        hideSkeletons('map');
+        document.querySelector('.map-panel').innerHTML = `
+            <div class="loading" style="padding:80px 20px;">
+                <p style="font-size:16px;color:#e74c3c;">⚠ 地图数据加载失败</p>
+                <p style="font-size:14px;color:#999;margin-top:8px;">
+                    可能是网络问题或 CORS 限制。<br>
+                    您仍可使用右侧列表查看省份天气。<br>
+                    或在本地启动服务器后访问：
+                    <code style="background:#f5f5f5;padding:2px 8px;border-radius:4px;">python -m http.server 8080</code>
+                </p>
+            </div>
+        `;
+        return;
+    }
+    fetch(GEOJSON_SOURCES[index])
+        .then(res => {
+            if (!res.ok) throw new Error('HTTP ' + res.status);
+            return res.json();
+        })
         .then(chinaJson => {
             echarts.registerMap('china', chinaJson);
             hideSkeletons('map');
             renderMap();
         })
         .catch(() => {
-            hideSkeletons('map');  // 至少显示侧边列表
-            dom.innerHTML = `<div class="loading" style="padding:80px 20px;">
-                <p style="color:#e74c3c;font-size:16px;">⚠ 地图加载失败</p>
-                <p style="color:#999;margin-top:8px;font-size:14px;">您仍可使用右侧列表查看省份天气</p>
-            </div>`;
+            // 尝试下一个源
+            tryLoadMap(index + 1);
         });
+}
+
+function initMap() {
+    const dom = document.getElementById('china-map');
+    dom.innerHTML = ''; // 清除 loading
+
+    myChart = echarts.init(dom);
+    tryLoadMap(0);
 }
 
 function getShortName(geoName) {
@@ -569,7 +593,8 @@ function renderMap() {
         tooltip: {
             trigger: 'item',
             formatter: function(params) {
-                const shortName = getShortName(params.name);
+                // params.name 现在就是 GeoJSON 全名（如"北京市"）
+                const shortName = GEO_NAME_MAP[params.name] || params.name;
                 const p = nameMap[shortName];
                 if (!p) return `<b>${shortName}</b>`;
                 return `<b>${p.name}</b><br/>🏙 省会: ${p.city}<br/>🌡 日均最高温: ${p.temp}°C<br/>👆 点击查看天气`;
@@ -601,13 +626,13 @@ function renderMap() {
             map: 'china',
             roam: false,
             selectedMode: false,
-            nameMap: GEO_NAME_MAP,  // GeoJSON 全名 → 短名
+            // nameMap: 这里不用 — 数据直接使用 GeoJSON 全名
             label: {
                 show: true,
                 fontSize: 10,
                 color: '#333',
                 formatter: function(params) {
-                    return getShortName(params.name);
+                    return GEO_NAME_MAP[params.name] || params.name;
                 }
             },
             emphasis: {
@@ -617,7 +642,7 @@ function renderMap() {
                     fontWeight: 'bold',
                     color: '#fff',
                     formatter: function(params) {
-                        return getShortName(params.name);
+                        return GEO_NAME_MAP[params.name] || params.name;
                     }
                 },
                 itemStyle: {
@@ -632,18 +657,21 @@ function renderMap() {
                 areaColor: '#e8f0fe'
             },
             data: PROVINCE_DATA.map(p => ({
-                name: p.name,
+                name: SHORT_TO_GEO[p.name] || p.name,  // 使用 GeoJSON 全名匹配
                 value: Math.round(p.temp * 10) / 10
             })),
             // 点击事件通过 onclick 处理
         }]
     };
 
-    myChart.setOption(option);
+    myChart.setOption(option, true);  // true = notMerge，确保干净渲染
+
+    // 延迟 resize 确保容器尺寸正确
+    setTimeout(() => myChart && myChart.resize(), 100);
 
     // 点击省份
     myChart.on('click', function(params) {
-        const shortName = getShortName(params.name);
+        const shortName = GEO_NAME_MAP[params.name] || params.name;
         const p = nameMap[shortName];
         if (p) {
             navigateTo(p.pinyin, p.name);
