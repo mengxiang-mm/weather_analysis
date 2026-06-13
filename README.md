@@ -74,16 +74,8 @@ python weather_analysis.py
 
 #### 5️⃣ 打开前端导航页面
 
-**方式一**：直接用浏览器打开 `china_weather.html`（双击即可）
+直接用浏览器打开 `china_weather.html`（双击即可）
 
-**方式二**：用 Python 启动本地服务器（解决某些浏览器的跨域限制）
-
-```bash
-# 在项目目录下运行
-python -m http.server 8080
-```
-
-然后浏览器访问 `http://localhost:8080/china_weather.html`
 
 ---
 
