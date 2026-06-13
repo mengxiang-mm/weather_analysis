@@ -1,0 +1,65 @@
+{
+  "meta": {
+    "description": "中国省份/城市数据 — 前后端共享",
+    "source": "墨迹天气 (tianqi.moji.com)",
+    "version": "1.0.0"
+  },
+  "provinces": [
+    { "region": "华北", "name": "北京",       "city": "北京",     "provincePinyin": "beijing",        "cityPinyin": "beijing" },
+    { "region": "华北", "name": "天津",       "city": "天津",     "provincePinyin": "tianjin",        "cityPinyin": "tianjin" },
+    { "region": "华北", "name": "河北",       "city": "石家庄",   "provincePinyin": "hebei",          "cityPinyin": "shijiazhuang" },
+    { "region": "华北", "name": "山西",       "city": "太原",     "provincePinyin": "shanxi",         "cityPinyin": "taiyuan" },
+    { "region": "华北", "name": "内蒙古",     "city": "呼和浩特", "provincePinyin": "inner-mongolia", "cityPinyin": "hohhot" },
+
+    { "region": "东北", "name": "辽宁",       "city": "沈阳",     "provincePinyin": "liaoning",       "cityPinyin": "shenyang" },
+    { "region": "东北", "name": "吉林",       "city": "长春",     "provincePinyin": "jilin",          "cityPinyin": "changchun" },
+    { "region": "东北", "name": "黑龙江",     "city": "哈尔滨",   "provincePinyin": "heilongjiang",   "cityPinyin": "harbin" },
+
+    { "region": "华东", "name": "上海",       "city": "上海",     "provincePinyin": "shanghai",       "cityPinyin": "shanghai" },
+    { "region": "华东", "name": "江苏",       "city": "南京",     "provincePinyin": "jiangsu",        "cityPinyin": "nanjing" },
+    { "region": "华东", "name": "浙江",       "city": "杭州",     "provincePinyin": "zhejiang",       "cityPinyin": "hangzhou" },
+    { "region": "华东", "name": "安徽",       "city": "合肥",     "provincePinyin": "anhui",          "cityPinyin": "hefei" },
+    { "region": "华东", "name": "福建",       "city": "福州",     "provincePinyin": "fujian",         "cityPinyin": "fuzhou" },
+    { "region": "华东", "name": "江西",       "city": "南昌",     "provincePinyin": "jiangxi",        "cityPinyin": "nanchang" },
+    { "region": "华东", "name": "山东",       "city": "济南",     "provincePinyin": "shandong",       "cityPinyin": "jinan" },
+
+    { "region": "华中", "name": "河南",       "city": "郑州",     "provincePinyin": "henan",          "cityPinyin": "zhengzhou" },
+    { "region": "华中", "name": "湖北",       "city": "武汉",     "provincePinyin": "hubei",          "cityPinyin": "wuhan" },
+    { "region": "华中", "name": "湖南",       "city": "长沙",     "provincePinyin": "hunan",          "cityPinyin": "changsha" },
+
+    { "region": "华南", "name": "广东",       "city": "广州",     "provincePinyin": "guangdong",      "cityPinyin": "guangzhou" },
+    { "region": "华南", "name": "广西",       "city": "南宁",     "provincePinyin": "guangxi",        "cityPinyin": "nanning" },
+    { "region": "华南", "name": "海南",       "city": "海口",     "provincePinyin": "hainan",         "cityPinyin": "haikou" },
+    { "region": "华南", "name": "香港",       "city": "香港",     "provincePinyin": "hong-kong",      "cityPinyin": "hong-kong" },
+    { "region": "华南", "name": "澳门",       "city": "澳门",     "provincePinyin": "macau",          "cityPinyin": "macau" },
+
+    { "region": "西南", "name": "重庆",       "city": "重庆",     "provincePinyin": "chongqing",      "cityPinyin": "chongqing" },
+    { "region": "西南", "name": "四川",       "city": "成都",     "provincePinyin": "sichuan",        "cityPinyin": "chengdu" },
+    { "region": "西南", "name": "贵州",       "city": "贵阳",     "provincePinyin": "guizhou",        "cityPinyin": "guiyang" },
+    { "region": "西南", "name": "云南",       "city": "昆明",     "provincePinyin": "yunnan",         "cityPinyin": "kunming" },
+    { "region": "西南", "name": "西藏",       "city": "拉萨",     "provincePinyin": "tibet",          "cityPinyin": "lhasa" },
+
+    { "region": "西北", "name": "陕西",       "city": "西安",     "provincePinyin": "shaanxi",        "cityPinyin": "xian" },
+    { "region": "西北", "name": "甘肃",       "city": "兰州",     "provincePinyin": "gansu",          "cityPinyin": "lanzhou" },
+    { "region": "西北", "name": "青海",       "city": "西宁",     "provincePinyin": "qinghai",        "cityPinyin": "xining" },
+    { "region": "西北", "name": "宁夏",       "city": "银川",     "provincePinyin": "ningxia",        "cityPinyin": "yinchuan" },
+    { "region": "西北", "name": "新疆",       "city": "乌鲁木齐", "provincePinyin": "xinjiang",       "cityPinyin": "urumqi" },
+
+    { "region": "台湾", "name": "台湾",       "city": "台北",     "provincePinyin": "taiwan",         "cityPinyin": "taipei" }
+  ],
+  "regions": ["华北", "东北", "华东", "华中", "华南", "西南", "西北", "台湾"],
+  "cityCoords": {
+    "北京": [116.4, 39.9], "上海": [121.5, 31.2], "天津": [117.2, 39.1],
+    "重庆": [106.5, 29.6], "石家庄": [114.5, 38.0], "太原": [112.5, 37.9],
+    "呼和浩特": [111.8, 40.8], "沈阳": [123.4, 41.8], "长春": [125.3, 43.9],
+    "哈尔滨": [126.6, 45.8], "南京": [118.8, 32.1], "杭州": [120.2, 30.3],
+    "合肥": [117.3, 31.9], "福州": [119.3, 26.1], "南昌": [115.9, 28.7],
+    "济南": [117.0, 36.7], "郑州": [113.7, 34.8], "武汉": [114.3, 30.6],
+    "长沙": [113.0, 28.2], "广州": [113.3, 23.1], "南宁": [108.4, 22.8],
+    "海口": [110.3, 20.0], "成都": [104.1, 30.6], "贵阳": [106.7, 26.6],
+    "昆明": [102.7, 25.0], "拉萨": [91.1, 29.6], "西安": [108.9, 34.3],
+    "兰州": [103.8, 36.0], "西宁": [101.8, 36.6], "银川": [106.3, 38.5],
+    "乌鲁木齐": [87.6, 43.8], "香港": [114.2, 22.3], "澳门": [113.5, 22.2],
+    "台北": [121.5, 25.0]
+  }
+}

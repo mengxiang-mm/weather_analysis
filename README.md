@@ -8,20 +8,29 @@
 
 ```
 weather_analysis/
-├── weather_analysis.py     # 爬虫 + 数据清洗 + 统计分析 + 可视化
-├── china_weather.html      # 中国天气导航前端页面（可独立打开）
-├── beijing_page.html       # 北京地区景区天气页面（参考/备用）
-├── requirements.txt        # Python 依赖清单
-├── .gitignore              # Git 忽略规则
-├── README.md               # 本文件
-└── weather_output/         # 脚本运行输出
-    ├── weather_data.csv           # 原始爬取数据
-    ├── weather_data_clean.csv     # 清洗后数据
-    ├── province_temp_summary.csv   # 各省温度统计
-    ├── 01_avg_temp_comparison.png  # 平均温度对比图
-    ├── 02_temp_heatmap.png         # 温度热力图
-    ├── 03_temp_trends.png          # 温度趋势图
-    └── 04_weather_pie_chart.png    # 天气状况饼图
+├── weather_analysis.py              # 入口文件（python weather_analysis.py）
+├── weather_analysis_pkg/            # 核心模块包
+│   ├── __init__.py
+│   ├── config.py                    # 配置管理（加载 province_data.json）
+│   ├── scraper.py                   # 爬虫模块（cloudscraper + UA 轮换）
+│   ├── cleaner.py                   # 数据清洗与存储
+│   ├── analyzer.py                  # 统计分析
+│   ├── visualizer.py                # 可视化（4 类图表）
+│   └── cli.py                       # 命令行入口与流程编排
+├── province_data.json               # 共享数据（前后端统一拼音映射）
+├── china_weather.html               # 中国天气导航前端页面（骨架屏加载）
+├── beijing_page.html                # 北京地区景区天气页面（参考/备用）
+├── requirements.txt                 # Python 依赖清单
+├── .gitignore                       # Git 忽略规则
+├── README.md                        # 本文件
+└── weather_output/                  # 脚本运行输出
+    ├── weather_data.csv             # 原始爬取数据
+    ├── weather_data_clean.csv       # 清洗后数据
+    ├── province_temp_summary.csv    # 各省温度统计
+    ├── 01_avg_temp_comparison.png   # 平均温度对比图
+    ├── 02_temp_heatmap.png          # 温度热力图
+    ├── 03_temp_trends.png           # 温度趋势图
+    └── 04_weather_pie_chart.png     # 天气状况饼图
 ```
 
 ---
@@ -74,22 +83,29 @@ python weather_analysis.py
 
 #### 5️⃣ 打开前端导航页面
 
-**方式一**：直接用浏览器打开 `china_weather.html`（双击即可）
+直接用浏览器打开 `china_weather.html`（双击即可）
 
-**方式二**：用 Python 启动本地服务器（解决某些浏览器的跨域限制）
+---
 
-```bash
-# 在项目目录下运行
-python -m http.server 8080
+## 🧩 项目架构（v2.0）
+
 ```
-
-然后浏览器访问 `http://localhost:8080/china_weather.html`
+weather_analysis.py          ← 入口，保持向后兼容
+weather_analysis_pkg/        ← 模块化拆分
+├── config.py                ← 配置 + province_data.json 加载
+├── scraper.py               ← 爬虫 + UA 轮换 + 样本数据
+├── cleaner.py               ← 数据清洗 + CSV 存储
+├── analyzer.py              ← 分组统计 + 分布分析
+├── visualizer.py            ← 4 类图表生成
+└── cli.py                   ← 主流程编排 + 命令行
+province_data.json           ← 前后端共享数据（拼音/坐标）
+```
 
 ---
 
 ## 🔧 自定义配置
 
-编辑 `weather_analysis.py` 开头的全局配置区：
+编辑 `weather_analysis_pkg/config.py` 中的配置：
 
 | 配置项 | 说明 | 默认值 |
 |--------|------|--------|
@@ -97,6 +113,9 @@ python -m http.server 8080
 | `TIMEOUT` | 请求超时（秒） | `20` |
 | `MAX_RETRIES` | 失败重试次数 | `3` |
 | `OUTPUT_DIR` | 输出目录 | `./weather_output` |
+| `USER_AGENTS` | UA 池（随机轮换） | 7 个浏览器 UA |
+
+前端拼音映射统一由 `province_data.json` 管理，不再硬编码。
 
 > ⚠️ **注意**：请合理设置爬虫延迟，避免对目标服务器造成压力。
 

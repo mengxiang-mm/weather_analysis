@@ -250,7 +250,36 @@
             margin-top: 4px;
         }
 
-        /* ===== (reserved for future use) ===== */
+        /* ===== Loading Skeleton ===== */
+        .skeleton {
+            background: linear-gradient(90deg, #f0f2f5 25%, #e0e5eb 50%, #f0f2f5 75%);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s infinite;
+            border-radius: 6px;
+        }
+        @keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
+        .skeleton-map {
+            width: 100%; height: 600px;
+            border-radius: 12px;
+        }
+        .skeleton-sidebar {
+            padding: 12px 16px;
+        }
+        .skeleton-sidebar .skel-search {
+            width: 100%; height: 44px; margin-bottom: 16px;
+        }
+        .skeleton-sidebar .skel-group {
+            margin-bottom: 12px;
+        }
+        .skeleton-sidebar .skel-header {
+            height: 44px; margin-bottom: 4px;
+        }
+        .skeleton-sidebar .skel-item {
+            height: 44px; margin: 2px 0; margin-left: 12px;
+        }
+        .skeleton-sidebar .skel-item:last-child { margin-bottom: 12px; }
+        .skeleton-sidebar .skel-item-2 { width: 75%; }
+        .skeleton-sidebar .skel-item-3 { width: 60%; }
     </style>
 </head>
 <body>
@@ -271,7 +300,8 @@
 <div class="main-container">
     <!-- Map Panel -->
     <div class="map-panel">
-        <div id="china-map">
+        <div id="map-skeleton" class="skeleton skeleton-map"></div>
+        <div id="china-map" style="display:none;">
             <div class="loading">
                 <div class="spinner"></div>
                 <div>加载中国地图中...</div>
@@ -289,7 +319,28 @@
         <div class="search-box">
             <input type="text" id="searchInput" placeholder="🔍 搜索省份或城市..." oninput="filterProvinces()">
         </div>
-        <div class="region-list" id="regionList">
+        <div id="sidebar-skeleton" class="skeleton skeleton-sidebar region-list" style="padding:16px;">
+            <div class="skel-search skeleton"></div>
+            <div class="skel-group">
+                <div class="skel-header skeleton"></div>
+                <div class="skel-item skeleton skel-item-2"></div>
+                <div class="skel-item skeleton skel-item-3"></div>
+                <div class="skel-item skeleton skel-item-2"></div>
+                <div class="skel-item skeleton skel-item-3"></div>
+            </div>
+            <div class="skel-group">
+                <div class="skel-header skeleton"></div>
+                <div class="skel-item skeleton skel-item-2"></div>
+                <div class="skel-item skeleton skel-item-3"></div>
+            </div>
+            <div class="skel-group">
+                <div class="skel-header skeleton"></div>
+                <div class="skel-item skeleton skel-item-2"></div>
+                <div class="skel-item skeleton skel-item-3"></div>
+                <div class="skel-item skeleton skel-item-2"></div>
+            </div>
+        </div>
+        <div class="region-list" id="regionList" style="display:none;">
             <!-- 由 JavaScript 动态渲染 -->
         </div>
     </div>
@@ -303,55 +354,56 @@
 // 墨迹天气 URL 模式: https://tianqi.moji.com/weather/china/<province>/<city>
 
 const PROVINCE_DATA = [
+    // 数据来源: province_data.json（前后端共享）
     // ===== 华北 =====
-    { region: '华北', name: '北京',       city: '北京',     pinyin: 'beijing',     cityPinyin: 'beijing',         temp: 29.1 },
-    { region: '华北', name: '天津',       city: '天津',     pinyin: 'tianjin',     cityPinyin: 'tianjin',         temp: 30.1 },
-    { region: '华北', name: '河北',       city: '石家庄',   pinyin: 'hebei',       cityPinyin: 'shijiazhuang',    temp: 33.3 },
-    { region: '华北', name: '山西',       city: '太原',     pinyin: 'shanxi',      cityPinyin: 'taiyuan',         temp: 31.3 },
-    { region: '华北', name: '内蒙古',     city: '呼和浩特', pinyin: 'neimenggu',   cityPinyin: 'huhehaote',       temp: 29.7 },
+    { region: '华北', name: '北京',       city: '北京',     pinyin: 'beijing',        cityPinyin: 'beijing',         temp: 29.1 },
+    { region: '华北', name: '天津',       city: '天津',     pinyin: 'tianjin',        cityPinyin: 'tianjin',         temp: 30.1 },
+    { region: '华北', name: '河北',       city: '石家庄',   pinyin: 'hebei',          cityPinyin: 'shijiazhuang',    temp: 33.3 },
+    { region: '华北', name: '山西',       city: '太原',     pinyin: 'shanxi',         cityPinyin: 'taiyuan',         temp: 31.3 },
+    { region: '华北', name: '内蒙古',     city: '呼和浩特', pinyin: 'inner-mongolia', cityPinyin: 'hohhot',          temp: 29.7 },
 
     // ===== 东北 =====
-    { region: '东北', name: '辽宁',       city: '沈阳',     pinyin: 'liaoning',    cityPinyin: 'shenyang',        temp: 26.1 },
-    { region: '东北', name: '吉林',       city: '长春',     pinyin: 'jilin',       cityPinyin: 'changchun',       temp: 25.3 },
-    { region: '东北', name: '黑龙江',     city: '哈尔滨',   pinyin: 'heilongjiang',cityPinyin: 'haerbin',         temp: 24.1 },
+    { region: '东北', name: '辽宁',       city: '沈阳',     pinyin: 'liaoning',       cityPinyin: 'shenyang',        temp: 26.1 },
+    { region: '东北', name: '吉林',       city: '长春',     pinyin: 'jilin',          cityPinyin: 'changchun',       temp: 25.3 },
+    { region: '东北', name: '黑龙江',     city: '哈尔滨',   pinyin: 'heilongjiang',   cityPinyin: 'harbin',          temp: 24.1 },
 
     // ===== 华东 =====
-    { region: '华东', name: '上海',       city: '上海',     pinyin: 'shanghai',    cityPinyin: 'shanghai',        temp: 29.7 },
-    { region: '华东', name: '江苏',       city: '南京',     pinyin: 'jiangsu',     cityPinyin: 'nanjing',         temp: 32.4 },
-    { region: '华东', name: '浙江',       city: '杭州',     pinyin: 'zhejiang',    cityPinyin: 'hangzhou',        temp: 30.0 },
-    { region: '华东', name: '安徽',       city: '合肥',     pinyin: 'anhui',       cityPinyin: 'hefei',           temp: 31.4 },
-    { region: '华东', name: '福建',       city: '福州',     pinyin: 'fujian',      cityPinyin: 'fuzhou',          temp: 27.9 },
-    { region: '华东', name: '江西',       city: '南昌',     pinyin: 'jiangxi',     cityPinyin: 'nanchang',        temp: 29.1 },
-    { region: '华东', name: '山东',       city: '济南',     pinyin: 'shandong',    cityPinyin: 'jinan',           temp: 33.4 },
+    { region: '华东', name: '上海',       city: '上海',     pinyin: 'shanghai',       cityPinyin: 'shanghai',        temp: 29.7 },
+    { region: '华东', name: '江苏',       city: '南京',     pinyin: 'jiangsu',        cityPinyin: 'nanjing',         temp: 32.4 },
+    { region: '华东', name: '浙江',       city: '杭州',     pinyin: 'zhejiang',       cityPinyin: 'hangzhou',        temp: 30.0 },
+    { region: '华东', name: '安徽',       city: '合肥',     pinyin: 'anhui',          cityPinyin: 'hefei',           temp: 31.4 },
+    { region: '华东', name: '福建',       city: '福州',     pinyin: 'fujian',         cityPinyin: 'fuzhou',          temp: 27.9 },
+    { region: '华东', name: '江西',       city: '南昌',     pinyin: 'jiangxi',        cityPinyin: 'nanchang',        temp: 29.1 },
+    { region: '华东', name: '山东',       city: '济南',     pinyin: 'shandong',       cityPinyin: 'jinan',           temp: 33.4 },
 
     // ===== 华中 =====
-    { region: '华中', name: '河南',       city: '郑州',     pinyin: 'henan',       cityPinyin: 'zhengzhou',       temp: 35.3 },
-    { region: '华中', name: '湖北',       city: '武汉',     pinyin: 'hubei',       cityPinyin: 'wuhan',           temp: 31.1 },
-    { region: '华中', name: '湖南',       city: '长沙',     pinyin: 'hunan',       cityPinyin: 'changsha',        temp: 32.0 },
+    { region: '华中', name: '河南',       city: '郑州',     pinyin: 'henan',          cityPinyin: 'zhengzhou',       temp: 35.3 },
+    { region: '华中', name: '湖北',       city: '武汉',     pinyin: 'hubei',          cityPinyin: 'wuhan',           temp: 31.1 },
+    { region: '华中', name: '湖南',       city: '长沙',     pinyin: 'hunan',          cityPinyin: 'changsha',        temp: 32.0 },
 
     // ===== 华南 =====
-    { region: '华南', name: '广东',       city: '广州',     pinyin: 'guangdong',   cityPinyin: 'guangzhou',       temp: 29.1 },
-    { region: '华南', name: '广西',       city: '南宁',     pinyin: 'guangxi',     cityPinyin: 'nanning',         temp: 30.6 },
-    { region: '华南', name: '海南',       city: '海口',     pinyin: 'hainan',      cityPinyin: 'haikou',          temp: 34.1 },
-    { region: '华南', name: '香港',       city: '香港',     pinyin: 'xianggang',   cityPinyin: 'hongkong',        temp: 28.3 },
-    { region: '华南', name: '澳门',       city: '澳门',     pinyin: 'aomen',       cityPinyin: 'macau',           temp: 29.1 },
+    { region: '华南', name: '广东',       city: '广州',     pinyin: 'guangdong',      cityPinyin: 'guangzhou',       temp: 29.1 },
+    { region: '华南', name: '广西',       city: '南宁',     pinyin: 'guangxi',        cityPinyin: 'nanning',         temp: 30.6 },
+    { region: '华南', name: '海南',       city: '海口',     pinyin: 'hainan',         cityPinyin: 'haikou',          temp: 34.1 },
+    { region: '华南', name: '香港',       city: '香港',     pinyin: 'hong-kong',      cityPinyin: 'hong-kong',       temp: 28.3 },
+    { region: '华南', name: '澳门',       city: '澳门',     pinyin: 'macau',          cityPinyin: 'macau',           temp: 29.1 },
 
     // ===== 西南 =====
-    { region: '西南', name: '重庆',       city: '重庆',     pinyin: 'chongqing',   cityPinyin: 'chongqing',       temp: 30.4 },
-    { region: '西南', name: '四川',       city: '成都',     pinyin: 'sichuan',     cityPinyin: 'chengdu',         temp: 29.7 },
-    { region: '西南', name: '贵州',       city: '贵阳',     pinyin: 'guizhou',     cityPinyin: 'guiyang',         temp: 27.3 },
-    { region: '西南', name: '云南',       city: '昆明',     pinyin: 'yunnan',      cityPinyin: 'kunming',         temp: 22.7 },
-    { region: '西南', name: '西藏',       city: '拉萨',     pinyin: 'xizang',      cityPinyin: 'lasa',            temp: 25.7 },
+    { region: '西南', name: '重庆',       city: '重庆',     pinyin: 'chongqing',      cityPinyin: 'chongqing',       temp: 30.4 },
+    { region: '西南', name: '四川',       city: '成都',     pinyin: 'sichuan',        cityPinyin: 'chengdu',         temp: 29.7 },
+    { region: '西南', name: '贵州',       city: '贵阳',     pinyin: 'guizhou',        cityPinyin: 'guiyang',         temp: 27.3 },
+    { region: '西南', name: '云南',       city: '昆明',     pinyin: 'yunnan',         cityPinyin: 'kunming',         temp: 22.7 },
+    { region: '西南', name: '西藏',       city: '拉萨',     pinyin: 'tibet',          cityPinyin: 'lhasa',           temp: 25.7 },
 
     // ===== 西北 =====
-    { region: '西北', name: '陕西',       city: '西安',     pinyin: 'shaanxi',     cityPinyin: 'xian',            temp: 36.9 },
-    { region: '西北', name: '甘肃',       city: '兰州',     pinyin: 'gansu',       cityPinyin: 'lanzhou',         temp: 30.9 },
-    { region: '西北', name: '青海',       city: '西宁',     pinyin: 'qinghai',     cityPinyin: 'xining',          temp: 24.1 },
-    { region: '西北', name: '宁夏',       city: '银川',     pinyin: 'ningxia',     cityPinyin: 'yinchuan',        temp: 33.1 },
-    { region: '西北', name: '新疆',       city: '乌鲁木齐', pinyin: 'xinjiang',    cityPinyin: 'wulumuqi',        temp: 31.6 },
+    { region: '西北', name: '陕西',       city: '西安',     pinyin: 'shaanxi',        cityPinyin: 'xian',            temp: 36.9 },
+    { region: '西北', name: '甘肃',       city: '兰州',     pinyin: 'gansu',          cityPinyin: 'lanzhou',         temp: 30.9 },
+    { region: '西北', name: '青海',       city: '西宁',     pinyin: 'qinghai',        cityPinyin: 'xining',          temp: 24.1 },
+    { region: '西北', name: '宁夏',       city: '银川',     pinyin: 'ningxia',        cityPinyin: 'yinchuan',        temp: 33.1 },
+    { region: '西北', name: '新疆',       city: '乌鲁木齐', pinyin: 'xinjiang',       cityPinyin: 'urumqi',          temp: 31.6 },
 
     // ===== 台湾 =====
-    { region: '台湾', name: '台湾',       city: '台北',     pinyin: 'taiwan',      cityPinyin: 'taibei',          temp: 25.1 },
+    { region: '台湾', name: '台湾',       city: '台北',     pinyin: 'taiwan',         cityPinyin: 'taipei',          temp: 25.1 },
 ];
 
 // 地区排序
@@ -472,6 +524,19 @@ function navigateTo(pinyin, name) {
 // ================================================================
 let myChart = null;
 
+function hideSkeletons(target) {
+    if (target === 'sidebar' || !target) {
+        const sk = document.getElementById('sidebar-skeleton');
+        if (sk) sk.style.display = 'none';
+        document.getElementById('regionList').style.display = 'block';
+    }
+    if (target === 'map' || !target) {
+        const sk = document.getElementById('map-skeleton');
+        if (sk) sk.style.display = 'none';
+        document.getElementById('china-map').style.display = 'block';
+    }
+}
+
 function initMap() {
     const dom = document.getElementById('china-map');
     dom.innerHTML = ''; // 清除 loading
@@ -483,10 +548,11 @@ function initMap() {
         .then(res => res.json())
         .then(chinaJson => {
             echarts.registerMap('china', chinaJson);
+            hideSkeletons('map');
             renderMap();
         })
         .catch(() => {
-            // 地图数据加载失败 — 仅显示侧边列表
+            hideSkeletons('map');  // 至少显示侧边列表
             dom.innerHTML = `<div class="loading" style="padding:80px 20px;">
                 <p style="color:#e74c3c;font-size:16px;">⚠ 地图加载失败</p>
                 <p style="color:#999;margin-top:8px;font-size:14px;">您仍可使用右侧列表查看省份天气</p>
@@ -593,6 +659,7 @@ function renderMap() {
 // ================================================================
 document.addEventListener('DOMContentLoaded', function() {
     renderSidebar();
+    hideSkeletons('sidebar');  // 列表渲染完成，隐藏侧边骨架
     initMap();
 });
 </script>
